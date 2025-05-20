@@ -1,15 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Enable static exports
+  output: 'export',
+  
   // Transpile three.js and related modules
   transpilePackages: ['three', 'react-three-fiber', '@react-three/drei'],
   
   // Add any other necessary configuration
   reactStrictMode: true,
-  
-  // Remove deprecated appDir option
-  experimental: {
-    // Add any other experimental features if needed
-  },
   
   eslint: {
     ignoreDuringBuilds: true,
@@ -24,8 +22,10 @@ const nextConfig = {
   },
 
   // Optimize for production
-  swcMinify: true,
   poweredByHeader: false,
+
+  // Set base path for GitHub Pages
+  basePath: '/FatigueDesigner',
 };
 
 export default nextConfig;
