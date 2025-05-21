@@ -1,5 +1,7 @@
 # Fatigue Designer
 
+[![Deploy to GitHub Pages](https://github.com/abdullahsabea/FatigueDesigner/actions/workflows/deploy.yml/badge.svg)](https://github.com/abdullahsabea/FatigueDesigner/actions/workflows/deploy.yml)
+
 A modern web application for designing and visualizing lattice structures for fatigue testing specimens. Built with Next.js, Three.js, and TypeScript.
 
 ## Features
@@ -87,3 +89,5 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - Three.js community for 3D visualization tools
 - Next.js team for the amazing framework
 - Radix UI for accessible components 
+
+NEXT_PUBLIC_BASE_PATH=/FatigueDesigner 

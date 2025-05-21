@@ -1,8 +1,6 @@
 import SpecimenDesigner from "@/components/specimen-designer"
 import Image from "next/image"
 
-const basePath = process.env.NEXT_PUBLIC_BASE_PATH || ''
-
 export default function Home() {
   return (
     <main className="container mx-auto py-6 px-4">
@@ -14,7 +12,7 @@ export default function Home() {
           </p>
         </div>
         <div className="flex-shrink-0">
-          <Image src={`${basePath}/logo.jpg`} alt="AS Engineering & Technology" width={120} height={120} className="h-auto" />
+          <Image src="/images/logo.png" alt="AS Engineering & Technology" width={120} height={120} className="h-auto" />
         </div>
       </div>
       <SpecimenDesigner />

@@ -15,7 +15,7 @@ import {
   Lathe,
 } from "@react-three/drei"
 import type { SpecimenType, SpecimenProfile } from "@/lib/types"
-import { getMaterialColor } from "@/lib/materials"
+import { getMaterialProperties } from "@/lib/materials"
 import * as THREE from "three"
 import { Suspense, useEffect, useMemo, useState } from "react"
 import { createLatticeGaugeSection } from "@/lib/lattice-generators"
@@ -40,32 +40,13 @@ export default function ThreeCanvas({
   controlsRef,
 }: ThreeCanvasProps) {
   return (
-    <Canvas
-      dpr={[1, 2]}
-      camera={{ position: [200, 100, 200], fov: 45 }}
-      gl={{ 
-        antialias: true,
-        alpha: true,
-        powerPreference: "high-performance"
-      }}
-    >
-      <color attach="background" args={["#ffffff"]} />
-      <fog attach="fog" args={["#ffffff", 200, 1000]} />
-      
-      <ambientLight intensity={1.0} />
-      <directionalLight 
-        position={[100, 100, 100]} 
-        intensity={1.5} 
-        castShadow 
-        shadow-mapSize={[2048, 2048]}
-      />
-      <directionalLight 
-        position={[-100, -100, -100]} 
-        intensity={0.8} 
-      />
-      
+    <Canvas>
+      <PerspectiveCamera makeDefault position={[0, 0, 200]} zoom={zoom} />
+      <ambientLight intensity={0.5} />
+      <spotLight position={[100, 100, 100]} angle={0.15} penumbra={1} intensity={1} castShadow />
+      <spotLight position={[-100, -100, -100]} angle={0.15} penumbra={1} intensity={0.5} />
       <Center>
-        <Suspense fallback={<SimplifiedSpecimen profile={profile} materialColor={getMaterialColor(material)} />}>
+        <Suspense fallback={<SimplifiedSpecimen profile={profile} material={material} />}>
           <SpecimenModel
             type={type}
             profile={profile}
@@ -75,7 +56,6 @@ export default function ThreeCanvas({
           />
         </Suspense>
       </Center>
-      
       <Grid
         args={[300, 300]}
         cellSize={10}
@@ -89,15 +69,7 @@ export default function ThreeCanvas({
         position={[0, -50, 0]}
         rotation={[-Math.PI / 2, 0, 0]}
       />
-      
-      <OrbitControls 
-        ref={controlsRef}
-        minDistance={50}
-        maxDistance={300}
-        enableDamping
-        dampingFactor={0.05}
-      />
-      
+      <OrbitControls ref={controlsRef} />
       <Environment preset="studio" />
       <GizmoHelper alignment="bottom-right" margin={[80, 80]}>
         <GizmoViewport labelColor="white" axisColors={["#ff3653", "#0adb50", "#2c8fdf"]} />
@@ -107,14 +79,22 @@ export default function ThreeCanvas({
 }
 
 // Simplified specimen for loading state
-function SimplifiedSpecimen({ profile, materialColor }: { profile: SpecimenProfile; materialColor: string }) {
+function SimplifiedSpecimen({ profile, material }: { profile: SpecimenProfile; material: string }) {
+  // Get material properties
+  const materialProps = getMaterialProperties(material)
+
   // Convert profile points to THREE.js Vector2 for Lathe geometry
   const points = profile.points.map((p) => new THREE.Vector2(p.y, p.x))
 
   return (
     <group>
       <Lathe args={[points, 64, 0, Math.PI * 2]}>
-        <meshStandardMaterial color={materialColor} wireframe={true} />
+        <meshStandardMaterial
+          color={materialProps.color}
+          wireframe={true}
+          metalness={materialProps.metalness * 0.5}
+          roughness={materialProps.roughness * 1.5}
+        />
       </Lathe>
       <Text position={[0, 0, 30]} fontSize={8} color="black" anchorX="center" anchorY="middle">
         Loading lattice structure...
@@ -136,20 +116,11 @@ function SpecimenModel({
   viewMode: "full" | "cross-section" | "wireframe" | "profile"
   material: string
 }) {
-  const materialColor = getMaterialColor(material)
-
   if (viewMode === "profile") {
     return <ProfileView profile={profile} />
   }
 
-  return (
-    <CircularSpecimen
-      profile={profile}
-      showDimensions={showDimensions}
-      viewMode={viewMode}
-      material={material}
-    />
-  )
+  return <CircularSpecimen profile={profile} showDimensions={showDimensions} viewMode={viewMode} material={material} />
 }
 
 function ProfileView({ profile }: { profile: SpecimenProfile }) {
@@ -195,7 +166,7 @@ function ProfileView({ profile }: { profile: SpecimenProfile }) {
 
       {profile.latticeType !== "none" && (
         <Text position={[0, 20, 0]} fontSize={5} color="blue" anchorX="center" anchorY="middle">
-          Gauge with {profile.latticeType.toUpperCase()} lattice voids
+          Gauge with {profile.latticeType.replace("-", " ")} lattice structure
         </Text>
       )}
     </group>
@@ -213,137 +184,157 @@ function CircularSpecimen({
   viewMode: "full" | "cross-section" | "wireframe" | "profile"
   material: string
 }) {
-  // Split the profile points into left grip, gauge, and right grip
-  const leftGripPoints = useMemo(() => profile.points.filter(p => p.x < -profile.gaugeLength / 2), [profile.points, profile.gaugeLength])
-  const rightGripPoints = useMemo(() => profile.points.filter(p => p.x > profile.gaugeLength / 2), [profile.points, profile.gaugeLength])
-  const gaugeStart = -profile.gaugeLength / 2
-  const gaugeEnd = profile.gaugeLength / 2
+  // Get material properties
+  const materialProps = getMaterialProperties(material)
 
-  // For Lathe geometry, need to close the profile for each part
-  const closeProfile = (pts: any[]) => {
-    if (pts.length < 2) return pts
-    const first = pts[0]
-    const last = pts[pts.length - 1]
-    if (first.y !== 0) pts.unshift({ x: first.x, y: 0 })
-    if (last.y !== 0) pts.push({ x: last.x, y: 0 })
-    return pts
-  }
+  // Convert profile points to THREE.js Vector2 for Lathe geometry
+  const points = profile.points.map((p) => new THREE.Vector2(p.y, p.x))
 
-  const leftGripLathe = useMemo(() => closeProfile(leftGripPoints.map(p => new THREE.Vector2(p.y, p.x))), [leftGripPoints])
-  const rightGripLathe = useMemo(() => closeProfile(rightGripPoints.map(p => new THREE.Vector2(p.y, p.x))), [rightGripPoints])
+  // For cross-section, we'll use only half of the revolution
+  const segments = viewMode === "cross-section" ? 32 : 64
+  const phiStart = 0
+  const phiLength = viewMode === "cross-section" ? Math.PI : Math.PI * 2
 
-  // Lattice gauge mesh
+  // Reference for the gauge section mesh
   const [latticeGaugeMesh, setLatticeGaugeMesh] = useState<THREE.Mesh | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(profile.latticeType !== "none")
   const [error, setError] = useState<string | null>(null)
 
+  // Create lattice gauge section if needed
   useEffect(() => {
-    let isMounted = true
-    const generateLattice = async () => {
-      if (profile.latticeType === "none") {
-        if (isMounted) {
-          setLatticeGaugeMesh(null)
-          setIsLoading(false)
-          setError(null)
-        }
-        return
-      }
-      if (isMounted) {
-        setIsLoading(true)
-        setError(null)
-      }
-      try {
-        const latticeMesh = createLatticeGaugeSection(profile.latticeType as any, {
-          size: profile.latticeSize,
-          thickness: profile.latticeThickness,
-          offset: profile.latticeOffset,
-          radius: profile.gaugeDiameter / 2,
-          length: profile.gaugeLength,
-        })
-        latticeMesh.position.set(0, 0, 0)
-        latticeMesh.rotation.set(0, Math.PI / 4, 0)
-        if (isMounted) {
-          setLatticeGaugeMesh(latticeMesh)
-          setIsLoading(false)
-        }
-      } catch (error) {
-        console.error("Error creating lattice gauge section:", error)
-        if (isMounted) {
-          setError("Failed to create lattice structure")
-          setIsLoading(false)
-        }
-      }
+    if (profile.latticeType === "none") {
+      setLatticeGaugeMesh(null)
+      setIsLoading(false)
+      setError(null)
+      return
     }
-    const timeoutId = setTimeout(() => {
-      generateLattice()
-    }, 100)
-    return () => {
-      isMounted = false
-      clearTimeout(timeoutId)
-    }
-  }, [profile.latticeType, profile.latticeSize, profile.latticeThickness, profile.latticeOffset, profile.gaugeDiameter, profile.gaugeLength])
 
-  // Simplified lattice for loading
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      // Create the lattice gauge section
+      const latticeMesh = createLatticeGaugeSection(profile.latticeType as any, {
+        size: profile.latticeSize,
+        thickness: profile.latticeThickness,
+        offset: profile.latticeOffset,
+        radius: profile.gaugeDiameter / 2,
+        length: profile.gaugeLength,
+      })
+
+      // Apply material properties to the lattice mesh
+      if (latticeMesh.material) {
+        const material = latticeMesh.material as THREE.MeshStandardMaterial
+        material.color.set(materialProps.color)
+        material.metalness = materialProps.metalness
+        material.roughness = materialProps.roughness
+        material.envMapIntensity = materialProps.envMapIntensity
+      }
+
+      setLatticeGaugeMesh(latticeMesh)
+      setIsLoading(false)
+    } catch (error) {
+      console.error("Error creating lattice gauge section:", error)
+      setError("Failed to create lattice structure")
+      setIsLoading(false)
+    }
+  }, [
+    profile.latticeType,
+    profile.latticeSize,
+    profile.latticeThickness,
+    profile.latticeOffset,
+    profile.gaugeDiameter,
+    profile.gaugeLength,
+    material, // Add material as a dependency to update when it changes
+    materialProps, // Add materialProps as a dependency
+  ])
+
+  // Create a simplified lattice visualization for preview
   const simplifiedLattice = useMemo(() => {
     if (profile.latticeType === "none" || !isLoading) return null
+
+    // Create a simple visualization of the lattice pattern
     const geometry = new THREE.CylinderGeometry(
       (profile.gaugeDiameter / 2) * 0.95,
       (profile.gaugeDiameter / 2) * 0.95,
       profile.gaugeLength * 0.95,
       32,
       32,
-      false
+      false,
     )
+
+    // Apply a wireframe material to show the lattice pattern
     const material = new THREE.MeshBasicMaterial({
-      color: "#000000",
+      color: materialProps.color,
       wireframe: true,
       transparent: true,
       opacity: 0.3,
     })
+
     return { geometry, material }
-  }, [profile.latticeType, profile.gaugeDiameter, profile.gaugeLength, isLoading])
+  }, [profile.latticeType, profile.gaugeDiameter, profile.gaugeLength, isLoading, materialProps.color])
 
   return (
-    <group rotation={[0, Math.PI / 4, 0]}>
-      {/* Left grip */}
-      {leftGripLathe.length > 2 && (
-        <Lathe args={[leftGripLathe, 64, 0, Math.PI * 2]}>
-          <meshStandardMaterial color={material} metalness={0.8} roughness={0.2} />
-        </Lathe>
-      )}
+    <group>
+      {/* Main specimen body */}
+      <Lathe args={[points, segments, phiStart, phiLength]}>
+        {viewMode === "wireframe" ? (
+          <meshStandardMaterial color={materialProps.color} wireframe={true} />
+        ) : (
+          <meshStandardMaterial
+            color={materialProps.color}
+            metalness={materialProps.metalness}
+            roughness={materialProps.roughness}
+            envMapIntensity={materialProps.envMapIntensity}
+          />
+        )}
+      </Lathe>
+
       {/* Lattice gauge section */}
       {profile.latticeType !== "none" && (
         <>
+          {/* Simplified lattice visualization while loading */}
           {isLoading && simplifiedLattice && (
-            <mesh position={[0, 0, 0]} rotation={[0, Math.PI / 4, 0]}>
+            <mesh
+              position={[0, 0, 0]}
+              rotation={[0, 0, 0]} // No rotation needed, lattice is already aligned with X axis
+            >
               <primitive object={simplifiedLattice.geometry} attach="geometry" />
               <primitive object={simplifiedLattice.material} attach="material" />
             </mesh>
           )}
+
+          {/* Error message if lattice creation failed */}
           {error && (
             <Html position={[0, 0, 0]} center>
               <div className="bg-red-100 text-red-800 px-3 py-2 rounded-md">{error}</div>
             </Html>
           )}
-          {!isLoading && !error && latticeGaugeMesh && (
-            <primitive object={latticeGaugeMesh} />
-          )}
+
+          {/* Actual lattice gauge section when loaded */}
+          {!isLoading && !error && latticeGaugeMesh && <primitive object={latticeGaugeMesh} />}
         </>
       )}
-      {/* Right grip */}
-      {rightGripLathe.length > 2 && (
-        <Lathe args={[rightGripLathe, 64, 0, Math.PI * 2]}>
-          <meshStandardMaterial color={material} metalness={0.8} roughness={0.2} />
-        </Lathe>
-      )}
-      {showDimensions && <DimensionLabels profile={profile} />}
+
+      {showDimensions && <DimensionLabels profile={profile} material={material} />}
     </group>
   )
 }
 
-function DimensionLabels({ profile }: { profile: SpecimenProfile }) {
+function DimensionLabels({ profile, material }: { profile: SpecimenProfile; material: string }) {
+  // Get material properties
+  const materialProps = getMaterialProperties(material)
+
   return (
     <group>
+      {/* Material info */}
+      <Html position={[0, profile.gripDiameter / 2 + 35, 0]} center>
+        <div className="bg-white/80 px-3 py-2 rounded text-xs">
+          <div className="font-bold capitalize">{material}</div>
+          <div>{materialProps.description}</div>
+        </div>
+      </Html>
+
       {/* Grip diameter/width */}
       <Html position={[0, profile.gripDiameter / 2 + 10, 0]} center>
         <div className="bg-white/80 px-2 py-1 rounded text-xs">
@@ -379,7 +370,7 @@ function DimensionLabels({ profile }: { profile: SpecimenProfile }) {
         Grip
       </Text>
       <Text position={[0, 0, 30]} fontSize={8} color="black" anchorX="center" anchorY="middle">
-        Gauge {profile.latticeType !== "none" && `(${profile.latticeType.toUpperCase()} Lattice)`}
+        Gauge {profile.latticeType !== "none" && `(${profile.latticeType.replace("-", " ")})`}
       </Text>
       <Text
         position={[profile.totalLength / 2 - profile.gripLength / 2, 0, 30]}
@@ -430,7 +421,7 @@ function DimensionLabels({ profile }: { profile: SpecimenProfile }) {
       {profile.latticeType !== "none" && (
         <Html position={[0, profile.gaugeDiameter / 2 + 25, 0]} center>
           <div className="bg-white/80 px-2 py-1 rounded text-xs">
-            Lattice: {profile.latticeType.toUpperCase()} (Cell: {profile.latticeSize.toFixed(1)}mm)
+            Lattice: {profile.latticeType.replace("-", " ")} (Cell: {profile.latticeSize.toFixed(1)}mm)
           </div>
         </Html>
       )}
