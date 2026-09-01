@@ -4,7 +4,7 @@ import { useRef, useState } from "react"
 import dynamic from "next/dynamic"
 import { Button } from "@/components/ui/button"
 import { RotateCw, ZoomIn, ZoomOut, Ruler, Layers } from "lucide-react"
-import type { SpecimenType, SpecimenProfile } from "@/lib/types"
+import type { SpecimenType, SpecimenProfile, MaterialType } from "@/lib/types"
 
 // Dynamically import the Three.js components with no SSR
 const ThreeCanvas = dynamic(() => import("./three-canvas"), { ssr: false })
@@ -12,14 +12,14 @@ const ThreeCanvas = dynamic(() => import("./three-canvas"), { ssr: false })
 interface SpecimenViewerProps {
   type: SpecimenType
   profile: SpecimenProfile
-  material: string
+  material: MaterialType
 }
 
 export default function SpecimenViewer({ type, profile, material }: SpecimenViewerProps) {
   const [zoom, setZoom] = useState(1)
   const [showDimensions, setShowDimensions] = useState(false)
   const [viewMode, setViewMode] = useState<"full" | "cross-section" | "wireframe" | "profile">("full")
-  const controlsRef = useRef(null)
+  const controlsRef = useRef<{ reset: () => void } | null>(null)
 
   const handleReset = () => {
     if (controlsRef.current) {

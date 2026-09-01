@@ -9,7 +9,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Download, FileDown, RefreshCw } from "lucide-react"
-import type { SpecimenParams, ASTMStandard, TransitionType, LatticeType } from "@/lib/types"
+import type { SpecimenParams, ASTMStandard, TransitionType, LatticeType, MaterialType } from "@/lib/types"
 import { exportToSTL, exportToSTEP, exportToIGES } from "@/lib/export-utils"
 import { getStandardTemplate } from "@/lib/standard-templates"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
@@ -55,7 +55,7 @@ export default function SpecimenForm({ type, params, standard, onChange, onStand
   }
 
   const handleMaterialChange = (value: string) => {
-    onChange({ material: value })
+    onChange({ material: value as MaterialType })
   }
 
   const handleTransitionTypeChange = (value: string) => {

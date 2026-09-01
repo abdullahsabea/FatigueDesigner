@@ -6,7 +6,7 @@ export async function exportToSTL(type: SpecimenType, params: SpecimenParams) {
   try {
     // Dynamically import Three.js and STLExporter only on the client side
     const THREE = await import("three")
-    const { STLExporter } = await import("three/examples/jsm/exporters/STLExporter")
+    const { STLExporter } = await import("three/examples/jsm/exporters/STLExporter.js")
 
     // Generate the specimen profile
     const profile = generateSpecimenProfile("circular", params)
@@ -63,7 +63,7 @@ ${JSON.stringify(params, null, 2)}
 Profile Information:
 - Total Length: ${profile.totalLength.toFixed(2)} mm
 - Gauge Length: ${profile.gaugeLength.toFixed(2)} mm
-- ${profile.isCircular ? "Diameter" : "Width"}: ${(profile.isCircular ? profile.gaugeDiameter : profile.gaugeWidth).toFixed(2)} mm
+- Diameter: ${profile.gaugeDiameter.toFixed(2)} mm
 - Transition Type: ${params.useTaperedTransition ? `Tapered (${params.taperAngle}°)` : params.transitionType}
 `
 
@@ -80,7 +80,7 @@ async function createThreeJSModel(type: SpecimenType, profile: any) {
   const model = new THREE.Group()
 
   // Create a lathe geometry for circular specimens
-  const points = profile.points.map((p) => new THREE.Vector2(p.y, p.x))
+  const points = profile.points.map((p: { x: number; y: number }) => new THREE.Vector2(p.y, p.x))
   const geometry = new THREE.LatheGeometry(points, 64)
   const material = new THREE.MeshStandardMaterial({ color: "#8c9db5", metalness: 0.8, roughness: 0.2 })
   const mesh = new THREE.Mesh(geometry, material)

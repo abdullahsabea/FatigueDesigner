@@ -5,6 +5,9 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38B2D6?style=flat&logo=tailwind-css&logoColor=white)](https://tailwindcss.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Deploy](https://github.com/abdullahsabea/FatigueDesigner/actions/workflows/deploy.yml/badge.svg)](https://github.com/abdullahsabea/FatigueDesigner/actions/workflows/deploy.yml)
+
+[**Live demo**](https://fatigue-designer.vercel.app)
 
 A modern, high-performance web application for parametric design, real-time 3D lattice visualization, and fatigue testing specimen geometry generation.
 
@@ -78,7 +81,7 @@ FatigueDesigner/
 * `pnpm dev` - Start development server with hot-reload
 * `pnpm build` - Build optimized production bundle
 * `pnpm start` - Launch production server
-* `pnpm lint` - Run static ESLint checks
+* `pnpm typecheck` - Check TypeScript without emitting files
 
 ---
 

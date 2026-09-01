@@ -14,7 +14,7 @@ import {
   Line,
   Lathe,
 } from "@react-three/drei"
-import type { SpecimenType, SpecimenProfile } from "@/lib/types"
+import type { SpecimenType, SpecimenProfile, MaterialType } from "@/lib/types"
 import { getMaterialColor } from "@/lib/materials"
 import * as THREE from "three"
 import { Suspense, useEffect, useMemo, useState } from "react"
@@ -23,7 +23,7 @@ import { createLatticeGaugeSection } from "@/lib/lattice-generators"
 interface ThreeCanvasProps {
   type: SpecimenType
   profile: SpecimenProfile
-  material: string
+  material: MaterialType
   zoom: number
   showDimensions: boolean
   viewMode: "full" | "cross-section" | "wireframe" | "profile"
@@ -134,7 +134,7 @@ function SpecimenModel({
   profile: SpecimenProfile
   showDimensions: boolean
   viewMode: "full" | "cross-section" | "wireframe" | "profile"
-  material: string
+  material: MaterialType
 }) {
   const materialColor = getMaterialColor(material)
 
@@ -211,7 +211,7 @@ function CircularSpecimen({
   profile: SpecimenProfile
   showDimensions: boolean
   viewMode: "full" | "cross-section" | "wireframe" | "profile"
-  material: string
+  material: MaterialType
 }) {
   // Split the profile points into left grip, gauge, and right grip
   const leftGripPoints = useMemo(() => profile.points.filter(p => p.x < -profile.gaugeLength / 2), [profile.points, profile.gaugeLength])
@@ -347,14 +347,14 @@ function DimensionLabels({ profile }: { profile: SpecimenProfile }) {
       {/* Grip diameter/width */}
       <Html position={[0, profile.gripDiameter / 2 + 10, 0]} center>
         <div className="bg-white/80 px-2 py-1 rounded text-xs">
-          {profile.isCircular ? `Ø${profile.gripDiameter.toFixed(1)}mm` : `W=${profile.gripWidth.toFixed(1)}mm`}
+          Ø{profile.gripDiameter.toFixed(1)}mm
         </div>
       </Html>
 
       {/* Gauge diameter/width */}
       <Html position={[0, profile.gaugeDiameter / 2 + 10, 0]} center>
         <div className="bg-white/80 px-2 py-1 rounded text-xs">
-          {profile.isCircular ? `Ø${profile.gaugeDiameter.toFixed(1)}mm` : `W=${profile.gaugeWidth.toFixed(1)}mm`}
+          Ø{profile.gaugeDiameter.toFixed(1)}mm
         </div>
       </Html>
 
