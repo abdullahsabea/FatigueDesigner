@@ -1,2 +1,4 @@
 allowBuilds:
   sharp: true
+overrides:
+  shell-quote: ^1.10.0
